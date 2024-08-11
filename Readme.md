@@ -18,7 +18,7 @@ This project introduces a novel color space, MCRG (Magenta, Cyan, Red, Green). I
    - Example: MCRG(1, 1, 1, 1) = #FFFFFF (White)
 2. Complex Number Inputs:
    - Example: MCRG(1, 1, 1+2j, 1) = #FF7F7F (Infrared/Salmon)
-   The use of complex numbers, inspired by quantum mechanics, allows for phase shifts in color representation.
+   The use of complex numbers allows for phase shifts in color representation.
 
 3. Phase and Amplitude Manipulation:
    Complex number inputs affect both the phase and amplitude of the color components, mimicking quantum state behavior and allowing for subtle color variations not possible in traditional RGB spaces.
