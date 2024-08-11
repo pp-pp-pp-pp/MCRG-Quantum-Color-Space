@@ -37,7 +37,7 @@ class QuantumVisualizer(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle('Quantum State Visualizer')
-        self.setGeometry(100, 100, 1000, 1000)  # Increased from 800x800 to 1000x1000
+        self.setGeometry(100, 100, 1000, 1000)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -60,6 +60,14 @@ class QuantumVisualizer(QMainWindow):
         self.state_label = QLabel()
         layout.addWidget(self.state_label)
 
+        color_layout = QHBoxLayout()
+        self.color_display = QLabel()
+        self.color_display.setFixedSize(100, 100)  # Set a fixed square size
+        self.color_display.setAlignment(Qt.AlignCenter)
+        color_layout.addWidget(self.color_display)
+        color_layout.addStretch()  # This will push the color display to the left
+        layout.addLayout(color_layout)
+
         self.canvas = QuantumStateCanvas()
         layout.addWidget(self.canvas)
 
@@ -69,8 +77,17 @@ class QuantumVisualizer(QMainWindow):
             state = TwoQubitState(amplitudes)
             self.state_label.setText(f'State: {state.amplitudes}')
             self.canvas.plot_state(state)
+            self.update_color_display(state)
         except ValueError:
             self.state_label.setText('Invalid input. Please enter valid complex numbers (e.g., 1+2j).')
+
+    def update_color_display(self, state):
+        color = self.canvas.state_to_color(state)
+        hex_code = f"#{color.red():02x}{color.green():02x}{color.blue():02x}"
+        
+        self.color_display.setStyleSheet(f"background-color: {hex_code}; border: 1px solid black;")
+        self.color_display.setText(f"State Color\nHex: {hex_code}")
+        self.color_display.setAlignment(Qt.AlignCenter)
 
 class QuantumStateCanvas(QWidget):
     def __init__(self):
@@ -156,11 +173,18 @@ class QuantumStateCanvas(QWidget):
     def draw_quantum_state(self, painter, width, height, margin):
         probabilities = self.state.get_probabilities()
         phases = self.state.get_phases()
-        colors = [QColor(0, 0, 255), QColor(0, 255, 0), QColor(255, 0, 0), QColor(255, 255, 0)]
+        colors = [QColor(255, 0, 255), QColor(0, 255, 255), QColor(255, 0, 0), QColor(0, 255, 0)]  # Magenta, Cyan, Red, Green
+        
+        positions = [
+            (0.5, 1),  # |00⟩ Magenta (bottom center)
+            (0, 0.5),  # |01⟩ Cyan (left center)
+            (1, 1),    # |10⟩ Red (bottom right)
+            (0, 0)     # |11⟩ Green (top left)
+        ]
         
         for i, (prob, phase, color) in enumerate(zip(probabilities, phases, colors)):
-            x = int(margin + (width - 2 * margin) * (i % 2))
-            y = int(height - margin - (height - 2 * margin) * (i // 2))
+            x = int(margin + (width - 2 * margin) * positions[i][0])
+            y = int(margin + (height - 2 * margin) * positions[i][1])
             
             # Draw probability circle
             painter.setPen(Qt.black)
@@ -173,27 +197,62 @@ class QuantumStateCanvas(QWidget):
             phase_y = int(y - radius * np.sin(phase))
             painter.drawLine(x, y, phase_x, phase_y)
             
-            # Adjust text position based on which quadrant it's in
-            text_x = x + 10 if i % 2 == 0 else x - 100
-            text_y = y + 20 if i < 2 else y - 10
+            # Adjust text position based on which state it is
+            if i == 0:  # Magenta
+                text_x = x - 50
+                text_y = y + radius + 20
+            elif i == 1:  # Cyan
+                text_x = x + radius + 10
+                text_y = y
+            elif i == 2:  # Red
+                text_x = x - 100
+                text_y = y + radius + 20
+            else:  # Green
+                text_x = x + radius + 10
+                text_y = y + 10
             
             painter.drawText(text_x, text_y, f'|{i:02b}⟩: {prob:.3f}, ∠{phase:.2f}')
 
     def draw_quantum_color(self, painter, width, height, margin):
         color = self.state_to_color(self.state)
         
-        # Draw a rectangle with the state color
+        # Draw a rectangle with the state color in the middle top of the graph
+        rect_width = 50
+        rect_height = 50
+        rect_x = (width - rect_width) // 2
+        rect_y = margin + 100  # Moved 100 pixels down from the top margin
+        
         painter.setBrush(color)
         painter.setPen(Qt.NoPen)
-        painter.drawRect(width - 150, height - 150, 100, 100)
+        painter.drawRect(rect_x, rect_y, rect_width, rect_height)
         
         # Label the color
         painter.setPen(Qt.black)
-        painter.drawText(width - 150, height - 160, "State Color")
+        painter.drawText(rect_x, rect_y - 5, "State Color")
 
         # Display the hex code
         hex_code = f"#{color.red():02x}{color.green():02x}{color.blue():02x}"
-        painter.drawText(width - 150, height - 40, f"Hex: {hex_code}")
+        painter.drawText(rect_x, rect_y + rect_height + 15, f"Hex: {hex_code}")
+
+    def paintEvent(self, event):
+        if self.state is None:
+            return
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        width = self.width()
+        height = self.height()
+        margin = 50
+
+        # Draw color space
+        self.draw_color_space(painter, width, height, margin)
+
+        # Draw coordinate system and labels
+        self.draw_coordinates_and_labels(painter, width, height, margin)
+
+        # Draw quantum state
+        self.draw_quantum_state(painter, width, height, margin)
         
     def state_to_color(self, state):
         # Calculate color components using complex arithmetic
