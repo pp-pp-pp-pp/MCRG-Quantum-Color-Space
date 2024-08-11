@@ -6,7 +6,7 @@
 2. Install required dependencies: `pip install PyQt5 numpy`
 3. Run the script
 4. Input complex amplitudes for each quantum basis state (|00⟩, |01⟩, |10⟩, |11⟩)
-5. Observe the resulting color visualization
+5. Observe the resulting color visualization. Disclaimer: The UI is pretty terrible right now.
    
 ## Project Overview
 
