@@ -61,11 +61,12 @@ class QuantumVisualizer(QMainWindow):
         layout.addWidget(self.state_label)
 
         color_layout = QHBoxLayout()
+        color_layout.addStretch(1)  # This will push the color display to the center
         self.color_display = QLabel()
         self.color_display.setFixedSize(100, 100)  # Set a fixed square size
         self.color_display.setAlignment(Qt.AlignCenter)
         color_layout.addWidget(self.color_display)
-        color_layout.addStretch()  # This will push the color display to the left
+        color_layout.addStretch(1)  # This will push the color display to the center
         layout.addLayout(color_layout)
 
         self.canvas = QuantumStateCanvas()
