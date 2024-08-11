@@ -1,4 +1,4 @@
-# Quantum-Inspired MCRG Color Space Visualizer
+# MCRG Color Space
 
 ## Usage Instructions
 
