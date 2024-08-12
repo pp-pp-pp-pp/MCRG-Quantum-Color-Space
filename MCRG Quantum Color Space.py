@@ -240,15 +240,15 @@ class QuantumStateCanvas(QWidget):
             # Adjust text position based on which state it is
             if i == 0:  # Magenta
                 text_x = x - 50
-                text_y = y + radius + 20
+                text_y = y + radius - 120
             elif i == 1:  # Cyan
-                text_x = x - radius + 10
+                text_x = x - radius + 120
                 text_y = y
             elif i == 2:  # Red
                 text_x = x - 100
                 text_y = y - radius - 20
             else:  # Green
-                text_x = x + radius + 10
+                text_x = x + radius + 20
                 text_y = y + 10
             
             painter.drawText(text_x, text_y, f'|{i:02b}⟩: {prob:.3f}, ∠{phase:.2f}')
