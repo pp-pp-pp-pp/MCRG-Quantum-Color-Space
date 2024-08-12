@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtGui import QColor, QPainter, QPen, QImage, QPixmap
 from PyQt5.QtCore import Qt, QPoint
 import numpy as np
-
+import colorsys
 
 class TwoQubitState:
     def __init__(self, amplitudes):
@@ -61,12 +61,28 @@ class QuantumVisualizer(QMainWindow):
         layout.addWidget(self.state_label)
 
         color_layout = QHBoxLayout()
-        color_layout.addStretch(1)  # This will push the color display to the center
+        color_layout.addStretch(1)
+        
+        self.channel_displays = []
+        for i in range(4):
+            channel_display = QLabel()
+            channel_display.setFixedSize(100, 100)  # Increased size
+            channel_display.setAlignment(Qt.AlignCenter)
+            channel_display.setWordWrap(True)  # Enable word wrapping
+            channel_display.setStyleSheet("color: grey;")  # Set text color to grey
+            color_layout.addWidget(channel_display)
+            self.channel_displays.append(channel_display)
+
+       # self.color_display.setStyleSheet("color: grey;")
+
+        color_layout.addSpacing(20)  # Add some space between channel displays and state color
+        
         self.color_display = QLabel()
-        self.color_display.setFixedSize(100, 100)  # Set a fixed square size
+        self.color_display.setFixedSize(100, 100)
         self.color_display.setAlignment(Qt.AlignCenter)
         color_layout.addWidget(self.color_display)
-        color_layout.addStretch(1)  # This will push the color display to the center
+        
+        color_layout.addStretch(1)
         layout.addLayout(color_layout)
 
         self.canvas = QuantumStateCanvas()
@@ -83,12 +99,35 @@ class QuantumVisualizer(QMainWindow):
             self.state_label.setText('Invalid input. Please enter valid complex numbers (e.g., 1+2j).')
 
     def update_color_display(self, state):
+        # Update main state color
         color = self.canvas.state_to_color(state)
         hex_code = f"#{color.red():02x}{color.green():02x}{color.blue():02x}"
-        
-        self.color_display.setStyleSheet(f"background-color: {hex_code}; border: 1px solid black;")
+        self.color_display.setStyleSheet(f"background-color: {hex_code}; border: 1px solid black; color: grey;")
+       # self.color_display.setStyleSheet(f"background-color: {hex_code}; border: 1px solid black;")
         self.color_display.setText(f"State Color\nHex: {hex_code}")
         self.color_display.setAlignment(Qt.AlignCenter)
+
+        # Define colors for each channel
+        channel_colors = [QColor(255, 0, 255), QColor(0, 255, 255), QColor(255, 0, 0), QColor(0, 255, 0)]
+
+        # Update individual channel colors
+        for i, amplitude in enumerate(state.amplitudes):
+            prob = abs(amplitude)**2
+            phase = np.angle(amplitude)
+            
+            # Use the predefined color for each channel
+            base_color = channel_colors[i]
+            
+            # Adjust the brightness based on the probability
+            r, g, b = base_color.red(), base_color.green(), base_color.blue()
+            r = int(r * prob)
+            g = int(g * prob)
+            b = int(b * prob)
+            
+            channel_color = QColor(r, g, b)
+            hex_code = f"#{channel_color.red():02x}{channel_color.green():02x}{channel_color.blue():02x}"
+            self.channel_displays[i].setStyleSheet(f"background-color: {hex_code}; border: 1px solid black; color: grey;")
+            self.channel_displays[i].setText(f"|{i:02b}⟩\n{prob:.2f}\n∠{phase:.2f}\nHex: {hex_code}")
 
 class QuantumStateCanvas(QWidget):
     def __init__(self):
@@ -203,11 +242,11 @@ class QuantumStateCanvas(QWidget):
                 text_x = x - 50
                 text_y = y + radius + 20
             elif i == 1:  # Cyan
-                text_x = x + radius + 10
+                text_x = x - radius + 10
                 text_y = y
             elif i == 2:  # Red
                 text_x = x - 100
-                text_y = y + radius + 20
+                text_y = y - radius - 20
             else:  # Green
                 text_x = x + radius + 10
                 text_y = y + 10
@@ -255,18 +294,16 @@ class QuantumStateCanvas(QWidget):
         # Draw quantum state
         self.draw_quantum_state(painter, width, height, margin)
         
+
     def state_to_color(self, state):
-        # Calculate color components using complex arithmetic
         r = abs(state.amplitudes[0] + state.amplitudes[2])**2
         g = abs(state.amplitudes[1] + state.amplitudes[3])**2
         b = abs(state.amplitudes[0] + state.amplitudes[1])**2
         
-        # Normalize
         max_val = max(r, g, b)
         if max_val > 0:
             r, g, b = r/max_val, g/max_val, b/max_val
         
-        # Convert to RGB color
         return QColor(int(r*255), int(g*255), int(b*255))
 
 if __name__ == '__main__':
